@@ -45,6 +45,7 @@ textarea{min-height:72px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:10
 .search{margin-bottom:10px}.actions-inline{display:flex;gap:7px;align-items:center}.balance{font-weight:800}
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 5px calc(8px + env(safe-area-inset-bottom));z-index:20}
 .bottom-nav button{border:0;background:transparent;color:#64748b;font-size:11px;font-weight:700}.bottom-nav button b{display:block;font-size:21px;margin-bottom:3px}.bottom-nav button.active{color:var(--navy)}
+.mine-grid{display:grid;gap:9px}.mine-card{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:13px}.mine-card small{display:block;color:var(--muted);margin-top:3px}.photo-preview{width:100%;max-height:220px;object-fit:cover;border-radius:12px;margin-top:10px;border:1px solid var(--border)}
 @media(min-width:760px){.kpis,.stats{grid-template-columns:repeat(4,1fr)}.quick{grid-template-columns:repeat(4,1fr)}}
 @media print{
   body>*{display:none!important}
@@ -140,17 +141,33 @@ textarea{min-height:72px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:10
 <section id="mineria" class="hidden">
   <div class="page-header"><button class="back" onclick="openPage('home')">←</button><h2>Minería</h2></div>
   <div class="stats" id="miningStats"></div>
+
   <div class="card">
-    <div class="row2"><div><label>Punto o túnel</label><input id="mPoint"></div><div><label>Fecha</label><input id="mDate" type="date"></div></div>
-    <div class="row2"><div><label>Toneladas</label><input id="mTon" type="number" step="0.01"></div><div><label>Gramos</label><input id="mGrams" type="number" step="0.01"></div></div>
+    <h3 style="margin-top:0">Nuevo lote minero</h3>
+    <div class="row2"><div><label>Punto o túnel</label><input id="mPoint" list="mineNames"></div><div><label>Fecha</label><input id="mDate" type="date"></div></div>
+    <datalist id="mineNames"></datalist>
+    <div class="row2"><div><label>Profundidad (m)</label><input id="mDepth" type="number" step="0.01"></div><div><label>Metros avanzados</label><input id="mAdvance" type="number" step="0.01"></div></div>
+    <div class="row2"><div><label>Toneladas procesadas</label><input id="mTon" type="number" step="0.01"></div><div><label>Gramos obtenidos</label><input id="mGrams" type="number" step="0.01"></div></div>
     <div class="row2"><div><label>Kilataje</label><input id="mKarat" type="number" step="0.01"></div><div><label>Precio por gramo C$</label><input id="mPrice" type="number" step="0.01"></div></div>
-    <label>Gastos C$</label><input id="mExpenses" type="number" step="0.01">
-    <label>Observación</label><textarea id="mNote"></textarea>
-    <button class="primary" onclick="addMining()">Guardar lote</button>
+    <div class="row2"><div><label>Rastra C$</label><input id="mMill" type="number" step="0.01"></div><div><label>Combustible C$</label><input id="mFuel" type="number" step="0.01"></div></div>
+    <div class="row2"><div><label>Mano de obra C$</label><input id="mLabor" type="number" step="0.01"></div><div><label>Otros gastos C$</label><input id="mOther" type="number" step="0.01"></div></div>
+    <label>Material observado</label><select id="mMaterial"><option>Sin especificar</option><option>Quartz blanco</option><option>Material negro</option><option>Material amarillo arenoso</option><option>Galena</option><option>Material morado/gris</option><option>Otro</option></select>
+    <label>Resultado de batea</label><select id="mPan"><option>Sin especificar</option><option>Débil</option><option>Regular</option><option>Bueno</option><option>Muy bueno</option></select>
+    <label>Observación geológica</label><textarea id="mNote" placeholder="Hilo, veta, color, dureza, galena y cambios del material..."></textarea>
+    <label>Fotografía opcional</label><input id="mPhoto" type="file" accept="image/*" onchange="previewPhoto(event)">
+    <img id="photoPreview" class="photo-preview hidden" alt="Vista previa">
+    <button class="primary" onclick="addMining()">Guardar lote minero</button>
+    <p class="note">Los ingresos y gastos del lote actualizan automáticamente la caja de minería.</p>
   </div>
+
   <div class="card" style="margin-top:12px">
-    <input class="search" id="miningSearch" placeholder="Buscar por punto o fecha..." oninput="render()">
-    <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Punto</th><th>Ton.</th><th>Gramos</th><th>g/t</th><th>Ingreso</th><th>Utilidad</th><th></th></tr></thead><tbody id="miningTable"></tbody></table></div>
+    <h3 style="margin-top:0">Comparación por punto</h3>
+    <div class="mine-grid" id="mineSummary"></div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <input class="search" id="miningSearch" placeholder="Buscar por punto, fecha o material..." oninput="render()">
+    <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Punto</th><th>Prof.</th><th>Ton.</th><th>Gramos</th><th>g/t</th><th>Ingreso</th><th>Gastos</th><th>Utilidad</th><th>Material</th><th></th></tr></thead><tbody id="miningTable"></tbody></table></div>
   </div>
 </section>
 
@@ -174,7 +191,7 @@ textarea{min-height:72px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:10
   <div class="stats" id="reportStats"></div>
   <div class="card">
     <h3 style="margin-top:0">Respaldo de información</h3>
-    <p class="note">La V5 migra automáticamente la información de versiones anteriores disponible en este navegador.</p>
+    <p class="note">La V6 migra automáticamente la información de versiones anteriores disponible en este navegador.</p>
     <button class="primary" onclick="backup()">Descargar respaldo</button>
     <button class="secondary" onclick="restoreFile.click()">Restaurar respaldo</button>
     <input id="restoreFile" class="hidden" type="file" accept=".json" onchange="restore(event)">
@@ -194,10 +211,10 @@ textarea{min-height:72px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:10
 </nav>
 
 <script>
-const KEY='gm_business_v5',base={rice:[],clients:[],mining:[],cash:[]};
+const KEY='gm_business_v6',base={rice:[],clients:[],mining:[],cash:[]};let pendingPhoto='';
 function migrate(){
   if(localStorage.getItem(KEY))return;
-  for(const old of ['gm_business_v4','gm_business_v3','gm_business_v2']){
+  for(const old of ['gm_business_v5','gm_business_v4','gm_business_v3','gm_business_v2']){
     const raw=localStorage.getItem(old);
     if(raw){try{localStorage.setItem(KEY,JSON.stringify({...base,...JSON.parse(raw)}));return}catch{}}
   }
@@ -239,12 +256,14 @@ function registerPayment(name){
   d.cash.unshift({id:Date.now(),date:today(),business:'Arroz',type:'Ingreso',concept:`Abono de ${name}`,amount,source:'payment',client:name});
   saveDB(d);render();
 }
-function addMining(){const ton=+mTon.value||0;if(ton<=0){alert('Ingresa las toneladas.');return}const d=getDB();d.mining.unshift({id:Date.now(),date:mDate.value||today(),point:mPoint.value.trim()||'Sin nombre',ton,grams:+mGrams.value||0,karat:+mKarat.value||0,price:+mPrice.value||0,expenses:+mExpenses.value||0,note:mNote.value.trim()});saveDB(d);['mPoint','mTon','mGrams','mKarat','mPrice','mExpenses','mNote'].forEach(i=>document.getElementById(i).value='');mDate.value=today();render()}
+function previewPhoto(e){const f=e.target.files[0];if(!f){pendingPhoto='';photoPreview.classList.add('hidden');return}if(f.size>900000){alert('La fotografía debe pesar menos de 900 KB.');e.target.value='';return}const r=new FileReader();r.onload=()=>{pendingPhoto=r.result;photoPreview.src=pendingPhoto;photoPreview.classList.remove('hidden')};r.readAsDataURL(f)}
+function mineExpenses(x){return (+x.mill||0)+(+x.fuel||0)+(+x.labor||0)+(+x.other||0)+(+x.expenses||0)}
+function addMining(){const ton=+mTon.value||0;if(ton<=0){alert('Ingresa las toneladas procesadas.');return}const d=getDB(),id=Date.now();const item={id,date:mDate.value||today(),point:mPoint.value.trim()||'Sin nombre',depth:+mDepth.value||0,advance:+mAdvance.value||0,ton,grams:+mGrams.value||0,karat:+mKarat.value||0,price:+mPrice.value||0,mill:+mMill.value||0,fuel:+mFuel.value||0,labor:+mLabor.value||0,other:+mOther.value||0,material:mMaterial.value,pan:mPan.value,note:mNote.value.trim(),photo:pendingPhoto};d.mining.unshift(item);const exp=mineExpenses(item),inc=item.grams*item.price;if(exp>0)d.cash.unshift({id:id+1,date:item.date,business:'Minería',type:'Salida',concept:`Gastos lote ${item.point}`,amount:exp,source:'mine-auto',sourceId:id});if(inc>0)d.cash.unshift({id:id+2,date:item.date,business:'Minería',type:'Ingreso',concept:`Producción lote ${item.point}`,amount:inc,source:'mine-auto',sourceId:id});saveDB(d);['mPoint','mDepth','mAdvance','mTon','mGrams','mKarat','mPrice','mMill','mFuel','mLabor','mOther','mNote','mPhoto'].forEach(i=>document.getElementById(i).value='');mMaterial.value='Sin especificar';mPan.value='Sin especificar';pendingPhoto='';photoPreview.classList.add('hidden');mDate.value=today();render();alert('Lote minero guardado y caja actualizada.')}
 function addCash(){const amount=+cAmount.value||0;if(amount<=0){alert('Ingresa un monto.');return}const d=getDB();d.cash.unshift({id:Date.now(),date:today(),business:cBusiness.value,type:cType.value,concept:cConcept.value.trim()||'Sin concepto',amount,source:'manual'});saveDB(d);cConcept.value='';cAmount.value='';render()}
 function removeItem(section,id){
   if(!confirm('¿Eliminar este registro?'))return;
   const d=getDB();
-  if(section==='rice')d.cash=d.cash.filter(x=>x.sourceId!==id);
+  if(section==='rice'||section==='mining')d.cash=d.cash.filter(x=>x.sourceId!==id);
   d[section]=d[section].filter(x=>x.id!==id);saveDB(d);render()
 }
 function stat(label,value,cls=''){return `<div class="stat"><strong class="${cls}">${value}</strong><span>${label}</span></div>`}
@@ -267,7 +286,7 @@ function render(){
   const riceProfit=d.rice.filter(x=>x.type==='Venta').reduce((s,x)=>s+x.qty*(x.price-x.cost),0)-riceExpenses;
   const invUnits=inv.reduce((s,[,v])=>s+v,0);
   const totalTon=d.mining.reduce((s,x)=>s+x.ton,0),totalGrams=d.mining.reduce((s,x)=>s+x.grams,0);
-  const miningIncome=d.mining.reduce((s,x)=>s+x.grams*x.price,0),miningExpenses=d.mining.reduce((s,x)=>s+x.expenses,0),miningProfit=miningIncome-miningExpenses;
+  const miningIncome=d.mining.reduce((s,x)=>s+(+x.grams||0)*(+x.price||0),0),miningExpenses=d.mining.reduce((s,x)=>s+mineExpenses(x),0),miningProfit=miningIncome-miningExpenses;
   const balance=b=>d.cash.filter(x=>x.business===b).reduce((s,x)=>s+(x.type==='Ingreso'?x.amount:-x.amount),0);
   const cashRice=balance('Arroz'),cashMining=balance('Minería'),cashTotal=cashRice+cashMining;
   const todaySales=d.rice.filter(x=>x.type==='Venta'&&x.date===t).reduce((s,x)=>s+x.qty*x.price,0);
@@ -296,9 +315,13 @@ function render(){
   clientList.innerHTML=names.length?names.map(name=>{const c=d.clients.find(x=>norm(x.name)===norm(name)),bal=clientBalance(d,name);return `<div class="client-card"><div><strong>${name}</strong><small>${c?.phone||'Sin teléfono'}${c?.address?' · '+c.address:''}</small><small class="balance ${bal>0?'negative':'positive'}">Saldo: ${money(Math.max(0,bal))}</small></div><div class="actions-inline">${bal>0?`<button class="mini" onclick="registerPayment('${name.replace(/'/g,"\\'")}')">Abono</button>`:''}${c?`<button class="delete" onclick="removeItem('clients',${c.id})">×</button>`:''}</div></div>`}).join(''):`<div class="empty">Sin clientes.</div>`;
 
   const mq=norm(document.getElementById('miningSearch')?.value);
-  const filteredMining=d.mining.filter(x=>!mq||norm(`${x.date} ${x.point}`).includes(mq));
+  const filteredMining=d.mining.filter(x=>!mq||norm(`${x.date} ${x.point} ${x.material} ${x.note}`).includes(mq));
   miningStats.innerHTML=stat('Toneladas',totalTon.toFixed(2))+stat('Oro',totalGrams.toFixed(2)+' g')+stat('Promedio',totalTon?(totalGrams/totalTon).toFixed(2)+' g/t':'0.00 g/t')+stat('Utilidad',money(miningProfit),miningProfit>=0?'positive':'negative');
-  miningTable.innerHTML=filteredMining.length?filteredMining.map(x=>`<tr><td>${dateText(x.date)}</td><td>${x.point}</td><td>${x.ton}</td><td>${x.grams}</td><td>${x.ton?(x.grams/x.ton).toFixed(2):'0.00'}</td><td>${money(x.grams*x.price)}</td><td>${money(x.grams*x.price-x.expenses)}</td><td><button class="delete" onclick="removeItem('mining',${x.id})">×</button></td></tr>`).join(''):`<tr><td colspan="8" class="empty">Sin lotes.</td></tr>`;
+  const points={};d.mining.forEach(x=>{const k=x.point||'Sin nombre';if(!points[k])points[k]={point:k,ton:0,grams:0,income:0,expenses:0,lots:0,depth:0};points[k].ton+=+x.ton||0;points[k].grams+=+x.grams||0;points[k].income+=(+x.grams||0)*(+x.price||0);points[k].expenses+=mineExpenses(x);points[k].lots++;points[k].depth=Math.max(points[k].depth,+x.depth||0)});
+  const pointList=Object.values(points).sort((a,b)=>(b.grams/b.ton||0)-(a.grams/a.ton||0));
+  mineNames.innerHTML=pointList.map(x=>`<option value="${x.point}"></option>`).join('');
+  mineSummary.innerHTML=pointList.length?pointList.map(x=>`<div class="mine-card"><div><strong>${x.point}</strong><small>${x.lots} lote(s) · ${x.ton.toFixed(2)} t · profundidad máx. ${x.depth.toFixed(1)} m</small><small>${x.grams.toFixed(2)} g · ${x.ton?(x.grams/x.ton).toFixed(2):'0.00'} g/t</small></div><strong class="${x.income-x.expenses>=0?'positive':'negative'}">${money(x.income-x.expenses)}</strong></div>`).join(''):`<div class="empty">Sin puntos mineros registrados.</div>`;
+  miningTable.innerHTML=filteredMining.length?filteredMining.map(x=>{const exp=mineExpenses(x),inc=(+x.grams||0)*(+x.price||0);return `<tr><td>${dateText(x.date)}</td><td>${x.point}</td><td>${(+x.depth||0).toFixed(1)} m</td><td>${(+x.ton||0).toFixed(2)}</td><td>${(+x.grams||0).toFixed(2)}</td><td>${x.ton?(x.grams/x.ton).toFixed(2):'0.00'}</td><td>${money(inc)}</td><td>${money(exp)}</td><td>${money(inc-exp)}</td><td>${x.material||'—'}</td><td><button class="delete" onclick="removeItem('mining',${x.id})">×</button></td></tr>`}).join(''):`<tr><td colspan="11" class="empty">Sin lotes.</td></tr>`;
 
   const cashq=norm(document.getElementById('cashSearch')?.value);
   const filteredCash=d.cash.filter(x=>!cashq||norm(`${x.date} ${x.business} ${x.type} ${x.concept}`).includes(cashq));
@@ -307,7 +330,7 @@ function render(){
 
   reportStats.innerHTML=stat('Utilidad arroz',money(riceProfit),riceProfit>=0?'positive':'negative')+stat('Utilidad minería',money(miningProfit),miningProfit>=0?'positive':'negative')+stat('Resultado conjunto',money(riceProfit+miningProfit),(riceProfit+miningProfit)>=0?'positive':'negative')+stat('Por cobrar',money(outstanding),outstanding>0?'negative':'positive');
 }
-function backup(){const blob=new Blob([JSON.stringify({app:'GM Business',version:5,exportedAt:new Date().toISOString(),data:getDB()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='gm-business-v5-'+today()+'.json';a.click()}
+function backup(){const blob=new Blob([JSON.stringify({app:'GM Business',version:6,exportedAt:new Date().toISOString(),data:getDB()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='gm-business-v6-'+today()+'.json';a.click()}
 function restore(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);saveDB(o.data||o);render();alert('Respaldo restaurado.')}catch{alert('Archivo no válido.')}};r.readAsText(f)}
 function clearAll(){if(confirm('¿Borrar todos los datos?')){localStorage.removeItem(KEY);render()}}
 setGreeting();mDate.value=today();updateRiceForm();render();
