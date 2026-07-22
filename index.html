@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="GM Business">
-<title>GM Business 3.2</title>
+<title>GM Business 3.4</title>
 <style>
 :root{--navy:#0f172a;--navy2:#1e293b;--bg:#f4f6f8;--card:#fff;--text:#111827;--muted:#6b7280;--border:#e5e7eb;--green:#15803d;--red:#b91c1c}
 *{box-sizing:border-box}
@@ -33,6 +33,11 @@ textarea{min-height:75px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:10
 .summary-grid{display:grid;gap:9px}
 .summary-card{display:flex;justify-content:space-between;gap:12px;padding:12px;border:1px solid var(--border);border-radius:13px}
 .summary-card small{display:block;color:var(--muted);margin-top:3px}
+.client-detail{border:1px solid var(--border);border-radius:14px;padding:13px;margin-top:10px}
+.client-detail h4{margin:0 0 8px}.client-sales{display:grid;gap:7px;margin-top:9px}
+.client-sale{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.client-sale:last-child{border-bottom:0}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#e2e8f0;font-size:11px;font-weight:800}
+.report-block{margin-top:12px}.report-block h3{margin:0 0 10px}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar button{flex:1;min-width:145px}.inventory-quality{border:1px solid var(--border);border-radius:15px;padding:14px;margin-bottom:10px}.inventory-quality-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.inventory-quality-head strong:last-child{font-size:20px}.inventory-breakdown{margin-top:9px;padding-top:9px;border-top:1px solid var(--border);display:grid;gap:5px}.inventory-breakdown div{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
 @media(min-width:760px){.stats{grid-template-columns:repeat(4,1fr)}.quick{grid-template-columns:repeat(4,1fr)}.filters{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
@@ -40,7 +45,7 @@ textarea{min-height:75px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:10
 <header>
   <h1>GM Business</h1>
   <p>Mendoza Business Group</p>
-  <span class="version">Versión 3.2</span>
+  <span class="version">Versión 3.4</span>
   <div class="greeting" id="greeting"></div>
 </header>
 
@@ -89,7 +94,19 @@ textarea{min-height:75px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:10
 </div></div>
 
 <div id="rice-inventario" class="rice-view hidden"><div class="card" id="inventoryFull"></div></div>
-<div id="rice-clientes" class="rice-view hidden"><div class="card"><label>Nombre</label><input id="clName"><label>Teléfono</label><input id="clPhone"><label>Dirección</label><input id="clAddress"><button class="primary" onclick="addClient()">Guardar cliente</button></div><div class="card" id="clientList"></div></div>
+<div id="rice-clientes" class="rice-view hidden">
+<div class="card">
+<h3 style="margin-top:0">Nuevo cliente</h3>
+<label>Nombre</label><input id="clName">
+<label>Teléfono</label><input id="clPhone">
+<label>Dirección</label><input id="clAddress">
+<button class="primary" onclick="addClient()">Guardar cliente</button>
+</div>
+<div class="card">
+<label>Buscar cliente</label><input id="clientSearch" placeholder="Nombre o teléfono..." oninput="render()">
+<div id="clientList"></div>
+</div>
+</div>
 <div id="rice-historial" class="rice-view hidden"><div class="card">
 <div class="filters">
 <div><label>Buscar</label><input id="riceSearch" placeholder="Producto, cliente o proveedor..." oninput="render()"></div>
@@ -115,7 +132,7 @@ textarea{min-height:75px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:10
 <label>Observaciones</label><textarea id="mNote"></textarea>
 <button class="primary" onclick="addMining()">Guardar lote minero</button><div id="mineMessage"></div>
 </div>
-<div class="card"><div class="tablewrap"><table style="min-width:850px"><thead><tr><th>Fecha</th><th>Punto</th><th>Ton.</th><th>Gramos</th><th>g/t</th><th>Ingreso</th><th>Gastos</th><th>Utilidad</th><th></th></tr></thead><tbody id="miningTable"></tbody></table></div></div>
+<div class="card"><h3 style="margin-top:0">Resumen por punto o túnel</h3><div id="minePointSummary" class="summary-grid"></div></div><div class="card"><div class="tablewrap"><table style="min-width:850px"><thead><tr><th>Fecha</th><th>Punto</th><th>Ton.</th><th>Gramos</th><th>g/t</th><th>Ingreso</th><th>Gastos</th><th>Utilidad</th><th></th></tr></thead><tbody id="miningTable"></tbody></table></div></div>
 </section>
 
 <section id="caja" class="hidden">
@@ -127,8 +144,25 @@ textarea{min-height:75px}.row2{display:grid;grid-template-columns:1fr 1fr;gap:10
 
 <section id="reportes" class="hidden">
 <div class="page-header"><button class="back" onclick="openPage('home')">←</button><h2>Reportes</h2></div>
+<div class="card">
+<div class="row2">
+<div><label>Desde</label><input id="reportFrom" type="date" onchange="render()"></div>
+<div><label>Hasta</label><input id="reportTo" type="date" onchange="render()"></div>
+</div>
+</div>
 <div class="stats" id="reportStats"></div>
-<div class="card"><h3>Respaldo de información</h3><button class="secondary" onclick="backup()">Descargar respaldo</button><button class="secondary" onclick="restoreInput.click()">Restaurar respaldo</button><input class="hidden" id="restoreInput" type="file" accept=".json" onchange="restoreBackup(event)"></div>
+<div class="card report-block"><h3>Productos más vendidos</h3><div id="topProducts" class="summary-grid"></div></div>
+<div class="card report-block"><h3>Clientes con mayor saldo</h3><div id="topDebtors" class="summary-grid"></div></div>
+<div class="card report-block"><h3>Resultados por mina</h3><div id="reportMinePoints" class="summary-grid"></div></div>
+<div class="card report-block">
+<h3>Exportación y respaldo</h3>
+<div class="toolbar">
+<button class="secondary" onclick="exportCSV()">Exportar CSV</button>
+<button class="secondary" onclick="backup()">Descargar respaldo</button>
+<button class="secondary" onclick="restoreInput.click()">Restaurar respaldo</button>
+</div>
+<input class="hidden" id="restoreInput" type="file" accept=".json" onchange="restoreBackup(event)">
+</div>
 </section>
 </main>
 
@@ -181,6 +215,7 @@ function addClient(){if(!clName.value.trim()){alert('Escribe el nombre.');return
 function addMining(){const ton=+mTon.value||0;if(ton<=0){alert('Ingresa las toneladas.');return}const d=getDB(),id=Date.now(),x={id,date:mDate.value||today(),point:mPoint.value.trim()||'Sin nombre',depth:+mDepth.value||0,ton,grams:+mGrams.value||0,karat:+mKarat.value||0,price:+mPrice.value||0,expenses:+mExpenses.value||0,material:mMaterial.value.trim(),note:mNote.value.trim()};d.mining.unshift(x);const income=x.grams*x.price;if(income>0)d.cash.unshift({id:id+1,date:x.date,business:'Minería',type:'Ingreso',concept:`Producción ${x.point}`,amount:income,sourceId:id});if(x.expenses>0)d.cash.unshift({id:id+2,date:x.date,business:'Minería',type:'Salida',concept:`Gastos ${x.point}`,amount:x.expenses,sourceId:id});if(!saveDB(d))return;['mPoint','mDepth','mTon','mGrams','mKarat','mPrice','mExpenses','mMaterial','mNote'].forEach(i=>document.getElementById(i).value='');mDate.value=today();
 const monthStart=new Date();monthStart.setDate(1);
 riceFrom.value=monthStart.toISOString().slice(0,10);riceTo.value=today();
+reportFrom.value=monthStart.toISOString().slice(0,10);reportTo.value=today();
 render();showMessage(mineMessage,'✅ Lote minero guardado correctamente.')}
 function addCash(){const amount=+cAmount.value||0;if(amount<=0){alert('Ingresa un monto válido.');return}const d=getDB();d.cash.unshift({id:Date.now(),date:today(),business:cBusiness.value,type:cType.value,concept:cConcept.value.trim()||'Sin concepto',amount});if(saveDB(d)){cConcept.value='';cAmount.value='';render();alert('Movimiento de caja guardado.')}}
 function removeItem(section,id){if(!confirm('¿Eliminar este registro?'))return;const d=getDB();if(section==='rice'||section==='mining')d.cash=d.cash.filter(x=>x.sourceId!==id);d[section]=d[section].filter(x=>x.id!==id);saveDB(d);render()}
@@ -218,6 +253,75 @@ function registerCreditPayment(name){
 }
 function stat(label,value,cls=''){return `<div class="stat"><strong class="${cls}">${value}</strong><span>${label}</span></div>`}
 
+
+function unitPounds(presentation){
+  if(presentation==='Quintal')return 100;
+  if(presentation==='50 libras')return 50;
+  if(presentation==='25 libras')return 25;
+  return 1;
+}
+function stockInQuintals(d,product,warehouse){
+  return d.rice.filter(x=>x.product===product&&(x.warehouse||'Principal')===warehouse&&x.type!=='Gasto')
+    .reduce((s,x)=>s+(x.type==='Compra'?1:-1)*(+x.qty||0)*unitPounds(x.presentation)/100,0);
+}
+function aggregatedInventory(d){
+  const out={};
+  d.rice.forEach(x=>{
+    if(x.type==='Gasto')return;
+    const product=x.product||'Sin clasificación';
+    const warehouse=x.warehouse||'Principal';
+    const key=`${product}|${warehouse}`;
+    if(!out[key])out[key]={product,warehouse,totalQuintals:0,details:{},purchaseValue:0,purchaseQuintals:0,lastBuy:0,lastSale:0};
+    const sign=x.type==='Compra'?1:-1;
+    const pounds=unitPounds(x.presentation);
+    const quintals=(+x.qty||0)*pounds/100;
+    out[key].totalQuintals+=sign*quintals;
+    out[key].details[x.presentation]=(out[key].details[x.presentation]||0)+sign*(+x.qty||0);
+
+    if(x.type==='Compra'){
+      const unitPrice=+x.price||0;
+      const pricePerQuintal=pounds?unitPrice*(100/pounds):0;
+      out[key].purchaseValue+=quintals*pricePerQuintal;
+      out[key].purchaseQuintals+=quintals;
+      out[key].lastBuy=pricePerQuintal;
+    }
+    if(x.type==='Venta'){
+      const unitPrice=+x.price||0;
+      out[key].lastSale=pounds?unitPrice*(100/pounds):0;
+    }
+  });
+
+  return Object.values(out)
+    .map(x=>({...x,avgCostQuintal:x.purchaseQuintals?x.purchaseValue/x.purchaseQuintals:0}))
+    .sort((a,b)=>a.product.localeCompare(b.product)||a.warehouse.localeCompare(b.warehouse));
+}
+
+function showClientDetail(name){
+  const el=document.getElementById('client-detail-'+encodeURIComponent(name));
+  if(el)el.classList.toggle('hidden');
+}
+function reportPeriodRows(rows){
+  const f=reportFrom?.value||'0000-01-01',t=reportTo?.value||'9999-12-31';
+  return rows.filter(x=>x.date>=f&&x.date<=t);
+}
+function exportCSV(){
+  const d=getDB();
+  const rows=[['Fecha','Módulo','Tipo','Producto o concepto','Presentación','Cantidad','Precio unitario','Costo unitario','Total','Utilidad','Persona']];
+  d.rice.forEach(x=>{
+    const total=(+x.qty||0)*(+x.price||0);
+    const utility=x.type==='Venta'?(+x.qty||0)*((+x.price||0)-(+x.cost||0)):x.type==='Gasto'?-total:0;
+    rows.push([x.date,'Arroz',x.type,x.product,x.presentation,x.qty,x.price,x.cost,total,utility,x.person||'']);
+  });
+  d.mining.forEach(x=>{
+    const income=(+x.grams||0)*(+x.price||0);
+    rows.push([x.date,'Minería','Lote',x.point,'Toneladas',x.ton,x.price,'',income,income-(+x.expenses||0),x.material||'']);
+  });
+  d.cash.forEach(x=>rows.push([x.date,'Caja',x.type,x.concept,'','',x.amount,'',x.amount,'',x.business]));
+  const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(["\ufeff"+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='gm-business-'+today()+'.csv';a.click();
+}
+
 function render(){
   const d=getDB(),inv=inventory(d);
   const riceSales=d.rice.filter(x=>x.type==='Venta').reduce((s,x)=>s+x.qty*x.price,0);
@@ -235,8 +339,32 @@ function render(){
   activity.innerHTML=acts.length?acts.map(x=>`<div class="item"><div><strong>${x.title}</strong><small>${x.detail}</small></div><small>${x.date}</small></div>`).join(''):'<div class="empty">Todavía no hay actividad registrada.</div>';
 
   riceStats.innerHTML=stat('Ventas',money(riceSales))+stat('Compras',money(ricePurchases))+stat('Utilidad',money(riceProfit),riceProfit>=0?'positive':'negative')+stat('Movimientos',d.rice.length);
-  const invHtml=inv.length?inv.map(([k,v])=>{const [p,pre,wh]=k.split('|');return `<div class="item"><div><strong>${p}</strong><small>${pre} · ${wh}</small><small>Costo promedio: ${money(v.avgCost)}</small><small>Última compra: ${money(v.lastBuy)} · Última venta: ${money(v.lastSale)}</small></div><strong class="${v.qty<0?'negative':'positive'}">${v.qty.toFixed(2)}</strong></div>`}).join(''):'<div class="empty">Sin inventario. Registra una compra para comenzar.</div>';
-  inventoryPreview.innerHTML=invHtml;inventoryFull.innerHTML=invHtml;
+  const aggInv=aggregatedInventory(d);
+  const invHtml=aggInv.length?aggInv.map(v=>{
+    const breakdown=Object.entries(v.details)
+      .filter(([,qty])=>Math.abs(qty)>0.0001)
+      .map(([pre,qty])=>`<div><span>${pre}</span><strong>${qty.toFixed(2)} unidades</strong></div>`)
+      .join('');
+
+    return `<div class="inventory-quality">
+      <div class="inventory-quality-head">
+        <div>
+          <strong>${v.product}</strong>
+          <small>${v.warehouse}</small>
+        </div>
+        <strong class="${v.totalQuintals<0?'negative':'positive'}">${v.totalQuintals.toFixed(2)} qq</strong>
+      </div>
+      <div class="inventory-breakdown">
+        ${breakdown||'<div><span>Sin existencia por presentación</span><strong>0</strong></div>'}
+        <div><span>Costo promedio por quintal</span><strong>${money(v.avgCostQuintal)}</strong></div>
+        <div><span>Última compra por quintal</span><strong>${money(v.lastBuy)}</strong></div>
+        <div><span>Última venta por quintal</span><strong>${money(v.lastSale)}</strong></div>
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty">Sin inventario. Registra una compra para comenzar.</div>';
+
+  inventoryPreview.innerHTML=invHtml;
+  inventoryFull.innerHTML=invHtml;
 
   const productProfit={};
   d.rice.filter(x=>x.type==='Venta').forEach(x=>{const k=`${x.product} · ${x.presentation}`;productProfit[k]=(productProfit[k]||0)+(+x.qty||0)*((+x.price||0)-(+x.cost||0))});
@@ -252,21 +380,53 @@ function render(){
   const riceRows=d.rice.filter(x=>(!q||norm(`${x.date} ${x.type} ${x.product} ${x.presentation} ${x.person}`).includes(q))&&(!typeFilter||x.type===typeFilter)&&x.date>=from&&x.date<=to);
   riceTable.innerHTML=riceRows.length?riceRows.map(x=>{const total=x.qty*x.price;const profit=x.type==='Venta'?x.qty*(x.price-x.cost):x.type==='Gasto'?-total:0;return `<tr><td>${x.date}</td><td><span class="badge ${x.type==='Venta'?'sale':x.type==='Compra'?'buy':'expense'}">${x.type}</span></td><td>${x.product}</td><td>${x.presentation}</td><td>${x.warehouse||'Principal'}</td><td>${x.qty}</td><td>${money(x.price)}</td><td>${money(x.cost)}</td><td>${money(total)}</td><td class="${profit>=0?'positive':'negative'}">${money(profit)}</td><td><span class="badge ${x.payment==='Crédito'?'credit':'sale'}">${x.payment||'Contado'}</span></td><td>${x.person||'—'}</td><td><button class="delete" onclick="removeItem('rice',${x.id})">×</button></td></tr>`}).join(''):'<tr><td colspan="13" class="empty">Sin movimientos.</td></tr>';
   clientNames.innerHTML=d.clients.map(x=>`<option value="${x.name}"></option>`).join('');
-  clientList.innerHTML=d.clients.length?d.clients.map(x=>`<div class="item"><div><strong>${x.name}</strong><small>${x.phone||'Sin teléfono'}${x.address?' · '+x.address:''}</small></div><button class="delete" onclick="removeItem('clients',${x.id})">×</button></div>`).join(''):'<div class="empty">Sin clientes.</div>';
+  const clientQuery=norm(clientSearch?.value);
+  const allClientNames=[...new Set([...d.clients.map(x=>x.name),...d.rice.filter(x=>x.person).map(x=>x.person)])]
+    .filter(name=>!clientQuery||norm(name).includes(clientQuery)||norm(d.clients.find(c=>norm(c.name)===norm(name))?.phone).includes(clientQuery));
+  clientList.innerHTML=allClientNames.length?allClientNames.map(name=>{
+    const c=d.clients.find(x=>norm(x.name)===norm(name));
+    const sales=d.rice.filter(x=>x.type==='Venta'&&norm(x.person)===norm(name));
+    const totalBought=sales.reduce((s,x)=>s+(+x.qty||0)*(+x.price||0),0);
+    const balance=Math.max(0,clientCreditBalance(d,name));
+    const recent=sales.slice(0,5).map(x=>`<div class="client-sale"><span>${x.date} · ${x.product} ${x.presentation}</span><strong>${money((+x.qty||0)*(+x.price||0))}</strong></div>`).join('');
+    return `<div class="client-detail">
+      <div class="item" style="padding:0;border:0">
+        <div><strong>${name}</strong><small>${c?.phone||'Sin teléfono'}${c?.address?' · '+c.address:''}</small><small>Total comprado: ${money(totalBought)}</small><small class="${balance>0?'negative':'positive'}">Saldo pendiente: ${money(balance)}</small></div>
+        <div><button class="delete" style="background:#dbeafe;color:#1d4ed8;margin-right:6px" onclick="showClientDetail('${name.replace(/'/g,"\\'")}')">Estado</button>${balance>0?`<button class="delete" style="background:#dcfce7;color:#166534;margin-right:6px" onclick="registerCreditPayment('${name.replace(/'/g,"\\'")}')">Abono</button>`:''}${c?`<button class="delete" onclick="removeItem('clients',${c.id})">×</button>`:''}</div>
+      </div>
+      <div id="client-detail-${encodeURIComponent(name)}" class="hidden"><h4>Últimas compras</h4><div class="client-sales">${recent||'<div class="empty">Sin compras.</div>'}</div></div>
+    </div>`;
+  }).join(''):'<div class="empty">Sin clientes.</div>';
 
   miningStats.innerHTML=stat('Toneladas',totalTon.toFixed(2))+stat('Oro',totalGrams.toFixed(2)+' g')+stat('Promedio',totalTon?(totalGrams/totalTon).toFixed(2)+' g/t':'0.00 g/t')+stat('Utilidad',money(miningProfit),miningProfit>=0?'positive':'negative');
+  const pointMap={};
+  d.mining.forEach(x=>{const k=x.point||'Sin nombre';if(!pointMap[k])pointMap[k]={ton:0,grams:0,income:0,expenses:0,lots:0};pointMap[k].ton+=+x.ton||0;pointMap[k].grams+=+x.grams||0;pointMap[k].income+=(+x.grams||0)*(+x.price||0);pointMap[k].expenses+=+x.expenses||0;pointMap[k].lots++});
+  minePointSummary.innerHTML=Object.keys(pointMap).length?Object.entries(pointMap).sort((a,b)=>(b[1].grams/(b[1].ton||1))-(a[1].grams/(a[1].ton||1))).map(([k,v])=>`<div class="summary-card"><div><strong>${k}</strong><small>${v.lots} lote(s) · ${v.ton.toFixed(2)} t · ${v.ton?(v.grams/v.ton).toFixed(2):'0.00'} g/t</small></div><div><strong>${v.grams.toFixed(2)} g</strong><small class="${v.income-v.expenses>=0?'positive':'negative'}">${money(v.income-v.expenses)}</small></div></div>`).join(''):'<div class="empty">Sin puntos registrados.</div>';
   miningTable.innerHTML=d.mining.length?d.mining.map(x=>{const inc=x.grams*x.price;return `<tr><td>${x.date}</td><td>${x.point}</td><td>${(+x.ton).toFixed(2)}</td><td>${(+x.grams).toFixed(2)}</td><td>${x.ton?(x.grams/x.ton).toFixed(2):'0.00'}</td><td>${money(inc)}</td><td>${money(x.expenses)}</td><td>${money(inc-x.expenses)}</td><td><button class="delete" onclick="removeItem('mining',${x.id})">×</button></td></tr>`}).join(''):'<tr><td colspan="9" class="empty">Sin lotes mineros.</td></tr>';
 
   cashStats.innerHTML=stat('Caja arroz',money(cashRice),cashRice>=0?'positive':'negative')+stat('Caja minería',money(cashMining),cashMining>=0?'positive':'negative')+stat('Caja total',money(cashTotal),cashTotal>=0?'positive':'negative');
   cashTable.innerHTML=d.cash.length?d.cash.map(x=>`<tr><td>${x.date}</td><td>${x.business}</td><td><span class="badge ${x.type==='Ingreso'?'sale':'expense'}">${x.type}</span></td><td>${x.concept}</td><td>${money(x.amount)}</td><td><button class="delete" onclick="removeItem('cash',${x.id})">×</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">Sin movimientos de caja.</td></tr>';
-  reportStats.innerHTML=stat('Utilidad arroz',money(riceProfit),riceProfit>=0?'positive':'negative')+stat('Utilidad minería',money(miningProfit),miningProfit>=0?'positive':'negative')+stat('Caja total',money(cashTotal),cashTotal>=0?'positive':'negative')+stat('Inventario',inv.reduce((s,x)=>s+x[1].qty,0).toFixed(2));
+  const rr=reportPeriodRows(d.rice),rm=reportPeriodRows(d.mining),rc=reportPeriodRows(d.cash);
+  const rrSales=rr.filter(x=>x.type==='Venta').reduce((s,x)=>s+(+x.qty||0)*(+x.price||0),0);
+  const rrProfit=rr.filter(x=>x.type==='Venta').reduce((s,x)=>s+(+x.qty||0)*((+x.price||0)-(+x.cost||0)),0)-rr.filter(x=>x.type==='Gasto').reduce((s,x)=>s+(+x.qty||0)*(+x.price||0),0);
+  const rmIncome=rm.reduce((s,x)=>s+(+x.grams||0)*(+x.price||0),0),rmExpenses=rm.reduce((s,x)=>s+(+x.expenses||0),0),rmProfit=rmIncome-rmExpenses;
+  const rcBalance=rc.reduce((s,x)=>s+(x.type==='Ingreso'?+x.amount:-x.amount),0);
+  reportStats.innerHTML=stat('Ventas arroz',money(rrSales))+stat('Utilidad arroz',money(rrProfit),rrProfit>=0?'positive':'negative')+stat('Utilidad minería',money(rmProfit),rmProfit>=0?'positive':'negative')+stat('Caja período',money(rcBalance),rcBalance>=0?'positive':'negative');
+  const productMap={};rr.filter(x=>x.type==='Venta').forEach(x=>{const k=`${x.product} · ${x.presentation}`;if(!productMap[k])productMap[k]={qty:0,total:0};productMap[k].qty+=+x.qty||0;productMap[k].total+=(+x.qty||0)*(+x.price||0)});
+  topProducts.innerHTML=Object.keys(productMap).length?Object.entries(productMap).sort((a,b)=>b[1].total-a[1].total).slice(0,8).map(([k,v],i)=>`<div class="summary-card"><div><strong>${i+1}. ${k}</strong><small>${v.qty.toFixed(2)} unidades vendidas</small></div><strong>${money(v.total)}</strong></div>`).join(''):'<div class="empty">Sin ventas en el período.</div>';
+  const debtorNames=[...new Set(d.rice.filter(x=>x.type==='Venta'&&x.payment==='Crédito'&&x.person).map(x=>x.person))];
+  const debtors=debtorNames.map(n=>[n,clientCreditBalance(d,n)]).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  topDebtors.innerHTML=debtors.length?debtors.map(([n,v],i)=>`<div class="summary-card"><div><strong>${i+1}. ${n}</strong><small>Cuenta por cobrar</small></div><strong class="negative">${money(v)}</strong></div>`).join(''):'<div class="empty">No hay saldos pendientes.</div>';
+  const reportPoints={};rm.forEach(x=>{const k=x.point||'Sin nombre';if(!reportPoints[k])reportPoints[k]={ton:0,grams:0,profit:0};reportPoints[k].ton+=+x.ton||0;reportPoints[k].grams+=+x.grams||0;reportPoints[k].profit+=(+x.grams||0)*(+x.price||0)-(+x.expenses||0)});
+  reportMinePoints.innerHTML=Object.keys(reportPoints).length?Object.entries(reportPoints).sort((a,b)=>b[1].profit-a[1].profit).map(([k,v])=>`<div class="summary-card"><div><strong>${k}</strong><small>${v.ton.toFixed(2)} t · ${v.grams.toFixed(2)} g · ${v.ton?(v.grams/v.ton).toFixed(2):'0.00'} g/t</small></div><strong class="${v.profit>=0?'positive':'negative'}">${money(v.profit)}</strong></div>`).join(''):'<div class="empty">Sin lotes en el período.</div>';
 }
-function backup(){const blob=new Blob([JSON.stringify({app:'GM Business',version:'3.2',exportedAt:new Date().toISOString(),data:getDB()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='gm-business-respaldo-'+today()+'.json';a.click()}
+function backup(){const blob=new Blob([JSON.stringify({app:'GM Business',version:'3.4',exportedAt:new Date().toISOString(),data:getDB()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='gm-business-respaldo-'+today()+'.json';a.click()}
 function restoreBackup(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);localStorage.setItem(KEY,JSON.stringify(o.data||o));render();alert('Respaldo restaurado correctamente.')}catch{alert('El archivo no es válido.')}};r.readAsText(f)}
 const h=new Date().getHours();greeting.textContent=(h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches')+', Gustavo 👋';
 mDate.value=today();
 const monthStart=new Date();monthStart.setDate(1);
 riceFrom.value=monthStart.toISOString().slice(0,10);riceTo.value=today();
+reportFrom.value=monthStart.toISOString().slice(0,10);reportTo.value=today();
 render();
 </script>
 </body>
